@@ -26,20 +26,14 @@ let rocket, slingshot, stations, blocks, score = 0, tokens = 0, isDragging = fal
 let scoreText, tokenText;
 
 function preload() {
-    this.load.image('rocket', 'https://via.placeholder.com/60x30.png?text=ElonRocket');
-    this.load.image('station', 'https://via.placeholder.com/40x40.png?text=Station');
-    this.load.image('block', 'https://via.placeholder.com/40x20.png?text=Block');
+    this.load.image('rocket', 'https://example.com/rocket.png');  // تصویر واقعی بذار
+    this.load.image('station', 'https://example.com/station.png');
+    this.load.image('block', 'https://example.com/block.png');
 }
 
 function create() {
-    const scene = this; // نگه داشتن مرجع به this برای استفاده در توابع دیگر
-
-    this.add.rectangle(400, 300, 800, 600, 0x000033); 
-
-    window.Telegram.WebApp.ready();
-    const user = window.Telegram.WebApp.initDataUnsafe.user || { id: 'test_user' };
-    this.add.text(16, 40, `Rescue Elon, ${user.id}!`, { fontSize: '16px', fill: '#fff' });
-
+    this.cameras.main.setBackgroundColor('#222244');  // پس‌زمینه تیره فضایی
+    
     slingshot = { x: 150, y: 500 };
     rocket = this.physics.add.sprite(slingshot.x, slingshot.y, 'rocket')
         .setScale(0.5)
@@ -54,18 +48,16 @@ function create() {
     blocks.create(620, 450, 'block').setImmovable(true);
     blocks.create(630, 400, 'block').setImmovable(true);
 
-    this.physics.add.collider(rocket, stations, (rocket, station) => hitStation(scene, rocket, station));
-    this.physics.add.collider(rocket, blocks, (rocket, block) => hitBlock(scene, rocket, block));
+    this.physics.add.collider(rocket, stations, hitStation, null, this);
+    this.physics.add.collider(rocket, blocks, hitBlock, null, this);
     this.physics.add.collider(blocks, stations);
 
     scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '20px', fill: '#fff' });
     tokenText = this.add.text(16, 60, 'Tokens: 0', { fontSize: '20px', fill: '#fff' });
 
-    this.add.text(150, 450, 'Grok: Launch Elon to Mars!', { fontSize: '16px', fill: '#fff' });
-
     this.input.on('pointerdown', startDrag, this);
     this.input.on('pointermove', dragRocket, this);
-    this.input.on('pointerup', () => launchRocket(scene));
+    this.input.on('pointerup', launchRocket, this);
 }
 
 function startDrag(pointer) {
@@ -75,67 +67,35 @@ function startDrag(pointer) {
 
 function dragRocket(pointer) {
     if (isDragging) {
-        rocket.x = Phaser.Math.Clamp(pointer.x, slingshot.x - 50, slingshot.x + 50);
-        rocket.y = Phaser.Math.Clamp(pointer.y, slingshot.y - 50, slingshot.y + 50);
+        rocket.x = Phaser.Math.Clamp(pointer.x, slingshot.x - 100, slingshot.x + 100);
+        rocket.y = Phaser.Math.Clamp(pointer.y, slingshot.y - 100, slingshot.y + 100);
     }
 }
 
-function launchRocket(scene) {
+function launchRocket() {
     if (isDragging) {
         isDragging = false;
-        const dx = slingshot.x - rocket.x;
-        const dy = slingshot.y - rocket.y;
-        rocket.setVelocity(dx * 15, dy * 15);
+        let dx = slingshot.x - rocket.x;
+        let dy = slingshot.y - rocket.y;
+        rocket.setVelocity(dx * 5, dy * 5);
         rocket.body.enable = true;
-
-        for (let i = 0; i < 5; i++) {
-            let smoke = scene.add.circle(rocket.x, rocket.y, 5, 0xaaaaaa);
-            scene.tweens.add({
-                targets: smoke,
-                scale: 0,
-                alpha: 0,
-                duration: 500,
-                delay: i * 50
-            });
-        }
     }
 }
 
-function hitStation(scene, rocket, station) {
+function hitStation(rocket, station) {
     station.destroy();
     score += 20;
     tokens += 0.2;
     scoreText.setText('Score: ' + score);
     tokenText.setText('Tokens: ' + tokens.toFixed(1));
-    checkWin(scene);
-
-    for (let i = 0; i < 10; i++) {
-        let spark = scene.add.circle(station.x, station.y, 3, 0xff0000);
-        scene.tweens.add({
-            targets: spark,
-            x: spark.x + Phaser.Math.Between(-20, 20),
-            y: spark.y + Phaser.Math.Between(-20, 20),
-            scale: 0,
-            alpha: 0,
-            duration: 300
-        });
-    }
 }
 
-function hitBlock(scene, rocket, block) {
+function hitBlock(rocket, block) {
     block.destroy();
     score += 10;
     tokens += 0.1;
     scoreText.setText('Score: ' + score);
     tokenText.setText('Tokens: ' + tokens.toFixed(1));
-}
-
-function checkWin(scene) {
-    if (stations.countActive(true) === 0) {
-        scene.add.text(400, 300, `Elon’s Saved! ${tokens.toFixed(1)} Grok-o-Gram`, { fontSize: '32px', fill: '#fff' }).setOrigin(0.5);
-        window.Telegram.WebApp.sendData(JSON.stringify({ score: score, tokens: tokens }));
-        setTimeout(() => window.Telegram.WebApp.close(), 2000);
-    }
 }
 
 function update() {
@@ -148,3 +108,4 @@ function resetRocket() {
     rocket.setPosition(slingshot.x, slingshot.y);
     rocket.setVelocity(0, 0);
     rocket.body.enable = true;
+}
