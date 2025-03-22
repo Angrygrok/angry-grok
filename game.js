@@ -89,7 +89,7 @@ function launchRocket() {
         isDragging = false;
         const dx = slingshot.x - rocket.x;
         const dy = slingshot.y - rocket.y;
-        rocket.setVelocity(dx * 15, dy * 15); // پرتاب قوی
+        rocket.setVelocity(dx * 15, dy * 15);
         rocket.body.enable = true;
 
         // دود موشک
